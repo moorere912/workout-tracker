@@ -4,14 +4,52 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+async function quickStartHtml(activeState) {
+  const inProgress = await store.getInProgressSession();
+  if (inProgress) {
+    return `
+      <div class="card" style="border-color:var(--accent)">
+        <div class="badge">IN PROGRESS</div>
+        <div class="card-title">${escapeHtml(inProgress.dayName || 'Workout')}</div>
+        <button class="btn primary" id="quickStartBtn" style="margin-top:10px">Continue Workout</button>
+      </div>
+    `;
+  }
+  if (!activeState) return '';
+  const program = await store.getProgram(activeState.programId);
+  if (!program) return '';
+  const dayObj = program.weeks[activeState.weekIndex]?.days[activeState.dayIndex];
+  if (!dayObj) return '';
+  return `
+    <div class="card" style="border-color:var(--accent)">
+      <div class="badge">UP NEXT &middot; ${escapeHtml(program.name)}</div>
+      <div class="card-title">${escapeHtml(dayObj.name)}</div>
+      <button class="btn primary" id="quickStartBtn" style="margin-top:10px">Start Today's Workout</button>
+    </div>
+  `;
+}
+
 export async function render(root, params, nav) {
   const [programs, activeState] = await Promise.all([store.getPrograms(), store.getActiveProgramState()]);
   const activeId = activeState ? activeState.programId : null;
 
   root.innerHTML = `
     <div class="topbar"><h1>Programs</h1></div>
+    <div id="quickStart">${await quickStartHtml(activeState)}</div>
     <div id="programList"></div>
   `;
+
+  root.querySelector('#quickStartBtn')?.addEventListener('click', async () => {
+    const inProgress = await store.getInProgressSession();
+    if (inProgress) {
+      nav.show('workout', { sessionId: inProgress.sessionId });
+      return;
+    }
+    const program = await store.getProgram(activeState.programId);
+    const session = await store.createSessionDraft(program, activeState.weekIndex, activeState.dayIndex);
+    await store.saveSession(session);
+    nav.show('workout', { sessionId: session.sessionId });
+  });
 
   const list = root.querySelector('#programList');
   if (programs.length === 0) {

@@ -14,37 +14,6 @@ function fmtVolume(n, unit) {
   return `${Math.round(n).toLocaleString()} ${unit}`;
 }
 
-async function makeSessionDraft(program, weekIndex, dayIndex) {
-  const weekObj = program.weeks[weekIndex];
-  const dayObj = weekObj.days[dayIndex];
-  const unit = await store.getUnit();
-  const exercises = await Promise.all(
-    dayObj.exercises.map(async (target) => {
-      const last = await store.getLastCompletedSetsForExercise(target.exerciseId);
-      const sets = Array.from({ length: target.targetSets }, (_, i) => {
-        const lastSet = last ? last[i] : null;
-        return {
-          weight: lastSet ? lastSet.weight : 0,
-          weightUnit: unit,
-          reps: lastSet ? lastSet.reps : target.targetRepsLow || 0,
-          completed: false,
-        };
-      });
-      return { exerciseId: target.exerciseId, target, sets };
-    })
-  );
-  return {
-    sessionId: `s-${Date.now()}`,
-    date: new Date().toISOString(),
-    programId: program.id,
-    weekIndex,
-    dayIndex,
-    dayName: dayObj.name,
-    status: 'in-progress',
-    exercises,
-  };
-}
-
 function fmtDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
@@ -110,13 +79,18 @@ export async function render(root, params, nav) {
         ${isNextUp ? '<div class="badge">UP NEXT</div>' : ''}
         <div class="card-title">${escapeHtml(d.name)}</div>
         ${d.exercises
-          .map(
-            (ex) => `
-          <div class="exercise-row">
-            <span class="name">${escapeHtml(exerciseNameCache[ex.exerciseId] || ex.exerciseId)}</span>
-            <span class="scheme">${repsLabel(ex)}</span>
-          </div>`
-          )
+          .map((ex) => {
+            const last = lastSetsCache[ex.exerciseId];
+            const lastLabel = last && last.length ? last.map((s) => `${s.weight}${s.weightUnit}x${s.reps}`).join(', ') : null;
+            return `
+          <div class="exercise-row" style="display:block">
+            <div style="display:flex;justify-content:space-between">
+              <span class="name">${escapeHtml(exerciseNameCache[ex.exerciseId] || ex.exerciseId)}</span>
+              <span class="scheme">${repsLabel(ex)}</span>
+            </div>
+            ${lastLabel ? `<div class="scheme" style="margin-top:2px">Last time: ${escapeHtml(lastLabel)}</div>` : ''}
+          </div>`;
+          })
           .join('')}
         <div style="margin-top:12px">
           <button class="btn primary" data-start-day="${dayIndex}">Start This Day</button>
@@ -141,6 +115,17 @@ export async function render(root, params, nav) {
   // Preload exercise names for display.
   const exercises = await store.getExercises();
   const exerciseNameCache = Object.fromEntries(exercises.map((e) => [e.id, e.name]));
+
+  let lastSetsCache = {};
+  async function preloadLastSets(weekIndex) {
+    const ids = new Set();
+    program.weeks[weekIndex].days.forEach((d) => d.exercises.forEach((ex) => ids.add(ex.exerciseId)));
+    const entries = await Promise.all(
+      Array.from(ids).map(async (id) => [id, await store.getLastCompletedSetsForExercise(id)])
+    );
+    lastSetsCache = Object.fromEntries(entries);
+  }
+  await preloadLastSets(selectedWeek);
 
   function paint() {
     root.innerHTML = `
@@ -181,8 +166,9 @@ export async function render(root, params, nav) {
       render(root, params, nav);
     });
 
-    root.querySelector('#weekSelect').addEventListener('change', (e) => {
+    root.querySelector('#weekSelect').addEventListener('change', async (e) => {
       selectedWeek = Number(e.target.value);
+      await preloadLastSets(selectedWeek);
       root.querySelector('#dayList').innerHTML = daysHtml();
       wireDayButtons();
     });
@@ -199,7 +185,7 @@ export async function render(root, params, nav) {
           nav.show('workout', { sessionId: existing.sessionId });
           return;
         }
-        const session = await makeSessionDraft(program, selectedWeek, dayIndex);
+        const session = await store.createSessionDraft(program, selectedWeek, dayIndex);
         await store.saveSession(session);
         nav.show('workout', { sessionId: session.sessionId });
       });

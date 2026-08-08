@@ -35,6 +35,37 @@ export async function setActiveProgramState(state) {
   return db.put('meta', { key: 'activeProgram', value: state });
 }
 
+export async function createSessionDraft(program, weekIndex, dayIndex) {
+  const weekObj = program.weeks[weekIndex];
+  const dayObj = weekObj.days[dayIndex];
+  const unit = await getUnit();
+  const exercises = await Promise.all(
+    dayObj.exercises.map(async (target) => {
+      const last = await getLastCompletedSetsForExercise(target.exerciseId);
+      const sets = Array.from({ length: target.targetSets }, (_, i) => {
+        const lastSet = last ? last[i] : null;
+        return {
+          weight: lastSet ? lastSet.weight : 0,
+          weightUnit: unit,
+          reps: lastSet ? lastSet.reps : target.targetRepsLow || 0,
+          completed: false,
+        };
+      });
+      return { exerciseId: target.exerciseId, target, sets };
+    })
+  );
+  return {
+    sessionId: `s-${Date.now()}`,
+    date: new Date().toISOString(),
+    programId: program.id,
+    weekIndex,
+    dayIndex,
+    dayName: dayObj.name,
+    status: 'in-progress',
+    exercises,
+  };
+}
+
 /* Exercises --------------------------------------------------------------*/
 
 export async function getExercises() {
