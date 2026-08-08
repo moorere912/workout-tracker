@@ -77,7 +77,8 @@ export async function render(root, params, nav) {
       <div class="daily-total">Today's total: <strong id="dailyTotalVal">${fmtVolume(total, unit)}</strong></div>
       <h1>${escapeHtml(session.dayName || 'Workout')}</h1>
       <div id="exerciseList">${session.exercises.map(exerciseBlockHtml).join('')}</div>
-      <button class="btn success" id="finishBtn" style="margin: 8px 0 24px">Finish Workout</button>
+      <button class="btn success" id="finishBtn" style="margin: 8px 0">Finish Workout</button>
+      <button class="btn ghost" id="cancelBtn" style="margin: 0 0 24px">Cancel This Workout</button>
     `;
     wireEvents();
   }
@@ -130,6 +131,13 @@ export async function render(root, params, nav) {
       }
 
       nav.show('history', { justFinishedId: session.sessionId });
+    });
+
+    root.querySelector('#cancelBtn').addEventListener('click', async () => {
+      const ok = window.confirm('Cancel this workout? Anything logged in it will be deleted — this does not count as done.');
+      if (!ok) return;
+      await store.deleteSession(session.sessionId);
+      nav.show('programs');
     });
   }
 
