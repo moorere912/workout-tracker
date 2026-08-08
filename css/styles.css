@@ -39,7 +39,7 @@ h1, h2, h3, p { margin: 0 0 8px; }
 #app {
   min-height: 100vh;
   padding-top: env(safe-area-inset-top);
-  padding-bottom: calc(var(--tabbar-h) + 16px);
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px);
 }
 
 .screen { display: none; padding: 16px 16px 8px; max-width: 640px; margin: 0 auto; }
@@ -126,7 +126,7 @@ h1, h2, h3, p { margin: 0 0 8px; }
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--tabbar-h);
+  min-height: var(--tabbar-h);
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--border);
