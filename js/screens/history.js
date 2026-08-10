@@ -47,12 +47,12 @@ async function renderDetail(root, session, nav) {
             <div class="set-num">${s.index + 1}</div>
             <div class="stepper" data-field="weight">
               <button type="button" data-delta="-5">&minus;</button>
-              <div class="val">${s.weight}</div>
+              <input class="val" type="number" inputmode="decimal" step="any" value="${s.weight}">
               <button type="button" data-delta="5">+</button>
             </div>
             <div class="stepper" data-field="reps">
               <button type="button" data-delta="-1">&minus;</button>
-              <div class="val">${s.reps}</div>
+              <input class="val" type="number" inputmode="numeric" pattern="[0-9]*" value="${s.reps}">
               <button type="button" data-delta="1">+</button>
             </div>
             <div></div>
@@ -92,7 +92,22 @@ async function renderDetail(root, session, nav) {
           const block = session.exercises.find((b) => b.exerciseId === exerciseId);
           const s = block.sets[setIndex];
           s[field] = Math.max(0, s[field] + delta);
-          btn.closest('.stepper').querySelector('.val').textContent = s[field];
+          btn.closest('.stepper').querySelector('.val').value = s[field];
+        });
+      });
+
+      root.querySelectorAll('.stepper input.val').forEach((input) => {
+        input.addEventListener('focus', () => input.select());
+        input.addEventListener('change', () => {
+          const row = input.closest('.set-row');
+          const exerciseId = row.dataset.ex;
+          const setIndex = Number(row.dataset.set);
+          const field = input.closest('.stepper').dataset.field;
+          const block = session.exercises.find((b) => b.exerciseId === exerciseId);
+          const s = block.sets[setIndex];
+          const parsed = field === 'weight' ? parseFloat(input.value) : parseInt(input.value, 10);
+          s[field] = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+          input.value = s[field];
         });
       });
       root.querySelector('#cancelBtn').addEventListener('click', async () => {
