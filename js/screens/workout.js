@@ -1,4 +1,5 @@
 import * as store from '../store.js';
+import { openExercisePhotoModal } from '../exercise-photos.js';
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -62,7 +63,7 @@ export async function render(root, params, nav) {
       : 'no previous data';
     return `
       <div class="workout-exercise" data-block="${block.exerciseId}">
-        <h3>${escapeHtml(ex ? ex.name : block.exerciseId)}</h3>
+        <h3><button type="button" class="exercise-link" data-photo-exercise="${block.exerciseId}">${escapeHtml(ex ? ex.name : block.exerciseId)}</button></h3>
         <div class="target">${repsLabel(block.target)}</div>
         <div class="last-time">Last time: ${escapeHtml(lastLabel)}</div>
         ${block.target.notes ? `<div class="last-time">${escapeHtml(block.target.notes)}</div>` : ''}
@@ -84,6 +85,14 @@ export async function render(root, params, nav) {
   }
 
   function wireEvents() {
+    root.querySelectorAll('[data-photo-exercise]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const exerciseId = btn.dataset.photoExercise;
+        const ex = exerciseCatalog[exerciseId];
+        openExercisePhotoModal(exerciseId, ex ? ex.name : exerciseId);
+      });
+    });
+
     root.querySelectorAll('.stepper button').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const row = btn.closest('.set-row');

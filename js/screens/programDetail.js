@@ -1,4 +1,5 @@
 import * as store from '../store.js';
+import { openExercisePhotoModal } from '../exercise-photos.js';
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -85,7 +86,7 @@ export async function render(root, params, nav) {
             return `
           <div class="exercise-row" style="display:block">
             <div style="display:flex;justify-content:space-between">
-              <span class="name">${escapeHtml(exerciseNameCache[ex.exerciseId] || ex.exerciseId)}</span>
+              <button type="button" class="exercise-link" data-photo-exercise="${ex.exerciseId}">${escapeHtml(exerciseNameCache[ex.exerciseId] || ex.exerciseId)}</button>
               <span class="scheme">${repsLabel(ex)}</span>
             </div>
             ${lastLabel ? `<div class="scheme" style="margin-top:2px">Last time: ${escapeHtml(lastLabel)}</div>` : ''}
@@ -177,6 +178,12 @@ export async function render(root, params, nav) {
   }
 
   function wireDayButtons() {
+    root.querySelectorAll('[data-photo-exercise]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const exerciseId = btn.dataset.photoExercise;
+        openExercisePhotoModal(exerciseId, exerciseNameCache[exerciseId] || exerciseId);
+      });
+    });
     root.querySelectorAll('[data-start-day]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const dayIndex = Number(btn.dataset.startDay);
