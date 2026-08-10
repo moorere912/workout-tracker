@@ -1,6 +1,7 @@
 import * as store from '../store.js';
 import { openExercisePhotoModal } from '../exercise-photos.js';
 import { startRestTimer, stopRestTimer } from '../rest-timer.js';
+import { icons } from '../icons.js';
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -19,7 +20,7 @@ function fmtVolume(n, unit) {
 export async function render(root, params, nav) {
   let session = params.sessionId ? await store.getSession(params.sessionId) : await store.getInProgressSession();
   if (!session) {
-    root.innerHTML = '<div class="empty-state">No workout in progress. Start one from a program.</div>';
+    root.innerHTML = `<div class="empty-state"><div class="empty-icon">${icons.empty(32)}</div><p>No workout in progress. Start one from a program.</p></div>`;
     return;
   }
 

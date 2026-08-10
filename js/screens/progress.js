@@ -1,4 +1,5 @@
 import * as store from '../store.js';
+import { icons } from '../icons.js';
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -10,7 +11,7 @@ function lineChart(values, labels, color) {
   const padX = 10;
   const padY = 16;
   if (values.length === 0) {
-    return `<div class="empty-state">Not enough data yet</div>`;
+    return `<div class="empty-state"><p>Not enough data yet</p></div>`;
   }
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
@@ -57,7 +58,7 @@ export async function render(root, params, nav) {
     const unit = await store.getUnit();
     const area = root.querySelector('#chartArea');
     if (history.length === 0) {
-      area.innerHTML = '<div class="empty-state">No logged sets for this exercise yet.</div>';
+      area.innerHTML = `<div class="empty-state"><div class="empty-icon">${icons.trendUp(32)}</div><p>No logged sets for this exercise yet.</p></div>`;
       return;
     }
     const labels = history.map((h) => new Date(h.date).toLocaleDateString());
@@ -84,5 +85,5 @@ export async function render(root, params, nav) {
   root.querySelector('#exSelect').addEventListener('change', (e) => paintCharts(e.target.value));
 
   if (selectedId) await paintCharts(selectedId);
-  else root.querySelector('#chartArea').innerHTML = '<div class="empty-state">No exercises found.</div>';
+  else root.querySelector('#chartArea').innerHTML = `<div class="empty-state"><p>No exercises found.</p></div>`;
 }

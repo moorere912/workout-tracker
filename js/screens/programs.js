@@ -1,4 +1,5 @@
 import * as store from '../store.js';
+import { icons } from '../icons.js';
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -34,7 +35,13 @@ export async function render(root, params, nav) {
   const activeId = activeState ? activeState.programId : null;
 
   root.innerHTML = `
-    <div class="topbar"><h1>Programs</h1></div>
+    <div class="brand-header">
+      <div class="brand-mark">${icons.barbell(20)}</div>
+      <div>
+        <h1>Programs</h1>
+        <div class="brand-sub">Pick a program, log your lifts</div>
+      </div>
+    </div>
     <div id="quickStart">${await quickStartHtml(activeState)}</div>
     <div id="programList"></div>
   `;
@@ -53,7 +60,7 @@ export async function render(root, params, nav) {
 
   const list = root.querySelector('#programList');
   if (programs.length === 0) {
-    list.innerHTML = '<div class="empty-state">No programs yet.</div>';
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">${icons.barbell(32)}</div><p>No programs yet.</p></div>`;
     return;
   }
 

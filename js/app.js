@@ -1,5 +1,6 @@
 import * as store from './store.js';
 import { initRestTimerBar } from './rest-timer.js';
+import { icons } from './icons.js';
 import * as programsScreen from './screens/programs.js';
 import * as programDetailScreen from './screens/programDetail.js';
 import * as workoutScreen from './screens/workout.js';
@@ -59,7 +60,15 @@ async function refreshContinueBar() {
   }
 }
 
+function renderTabIcons() {
+  document.querySelectorAll('.tabbar .icon[data-icon]').forEach((el) => {
+    const fn = icons[el.dataset.icon];
+    if (fn) el.innerHTML = fn(20);
+  });
+}
+
 function wireNav() {
+  renderTabIcons();
   document.querySelectorAll('.tabbar button').forEach((btn) => {
     btn.addEventListener('click', () => nav.show(btn.dataset.tab));
   });

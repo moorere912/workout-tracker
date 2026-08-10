@@ -1,4 +1,5 @@
 import * as store from '../store.js';
+import { icons } from '../icons.js';
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -157,7 +158,7 @@ export async function render(root, params, nav) {
   const list = root.querySelector('#list');
 
   if (sessions.length === 0) {
-    list.innerHTML = '<div class="empty-state">No workouts logged yet. Start one from a program.</div>';
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">${icons.clock(32)}</div><p>No workouts logged yet. Start one from a program.</p></div>`;
     return;
   }
 
