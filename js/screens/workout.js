@@ -1,5 +1,6 @@
 import * as store from '../store.js';
 import { openExercisePhotoModal } from '../exercise-photos.js';
+import { startRestTimer, stopRestTimer } from '../rest-timer.js';
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -134,11 +135,15 @@ export async function render(root, params, nav) {
         const s = block.sets[setIndex];
         s.completed = !s.completed;
         btn.classList.toggle('done', s.completed);
+        if (s.completed && block.target.restSeconds) {
+          startRestTimer(block.target.restSeconds);
+        }
         await persist();
       });
     });
 
     root.querySelector('#finishBtn').addEventListener('click', async () => {
+      stopRestTimer();
       session.status = 'completed';
       session.endedAt = new Date().toISOString();
       await store.saveSession(session);
@@ -161,6 +166,7 @@ export async function render(root, params, nav) {
     root.querySelector('#cancelBtn').addEventListener('click', async () => {
       const ok = window.confirm('Cancel this workout? Anything logged in it will be deleted — this does not count as done.');
       if (!ok) return;
+      stopRestTimer();
       await store.deleteSession(session.sessionId);
       nav.show('programs');
     });

@@ -1,4 +1,5 @@
 import * as store from './store.js';
+import { initRestTimerBar } from './rest-timer.js';
 import * as programsScreen from './screens/programs.js';
 import * as programDetailScreen from './screens/programDetail.js';
 import * as workoutScreen from './screens/workout.js';
@@ -66,6 +67,7 @@ function wireNav() {
     const inProgress = await store.getInProgressSession();
     if (inProgress) nav.show('workout', { sessionId: inProgress.sessionId });
   });
+  initRestTimerBar(document);
 }
 
 function registerServiceWorker() {

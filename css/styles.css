@@ -372,3 +372,29 @@ svg.chart { width: 100%; height: auto; display: block; }
   border-radius: 10px;
   display: block;
 }
+
+.rest-timer-bar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  /* Sits above where the continue-bar would show, in case a rest timer is
+     still running after navigating off the workout screen. */
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 80px);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 10px 12px 10px 16px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 19;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+.rest-timer-bar.show { display: flex; }
+.rest-timer-bar.done { border-color: var(--success); }
+.rest-timer-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+.rest-timer-bar strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+.rest-timer-bar.done strong { color: var(--success); }
+.rest-timer-bar #restSkipBtn { width: auto; padding: 8px 16px; }
