@@ -68,10 +68,13 @@ export async function render(root, params, nav) {
     .map((p) => {
       const isActive = p.id === activeId;
       return `
-        <div class="card tappable" data-id="${p.id}" role="button" tabindex="0">
-          ${isActive ? '<div class="badge">ACTIVE</div>' : ''}
-          <div class="card-title">${escapeHtml(p.name)}</div>
-          <div class="card-sub">${p.durationWeeks} weeks &middot; ${p.daysPerWeek} days/week${p.author ? ` &middot; ${escapeHtml(p.author)}` : ''}</div>
+        <div class="card tappable program-card" data-id="${p.id}" role="button" tabindex="0">
+          <div class="program-card-icon">${icons.barbell(20)}</div>
+          <div class="program-card-body">
+            ${isActive ? '<div class="badge">ACTIVE</div>' : ''}
+            <div class="card-title">${escapeHtml(p.name)}</div>
+            <div class="card-sub">${p.durationWeeks} weeks &middot; ${p.daysPerWeek} days/week${p.author ? ` &middot; ${escapeHtml(p.author)}` : ''}</div>
+          </div>
         </div>
       `;
     })

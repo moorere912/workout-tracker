@@ -43,9 +43,12 @@ export async function render(root, params, nav) {
 
   let selectedWeek = isActive ? activeState.weekIndex : 0;
 
-  function weekOptionsHtml() {
+  function weekPillsHtml() {
     return program.weeks
-      .map((w, i) => `<option value="${i}" ${i === selectedWeek ? 'selected' : ''}>Week ${w.week}</option>`)
+      .map((w, i) => {
+        const hasProgress = w.days.some((_, di) => completedByKey[`${i}-${di}`]);
+        return `<button type="button" class="week-pill ${i === selectedWeek ? 'active' : ''}" data-week="${i}">Week ${w.week}${hasProgress ? '<span class="week-pill-dot"></span>' : ''}</button>`;
+      })
       .join('');
   }
 
@@ -66,7 +69,7 @@ export async function render(root, params, nav) {
       .join('');
     return `
       <div class="card">
-        <div class="badge">&check; DONE &middot; ${fmtDate(session.date)}</div>
+        <div class="badge success">&check; DONE &middot; ${fmtDate(session.date)}</div>
         <div class="card-title" data-toggle-day="${key}" style="cursor:pointer">${escapeHtml(d.name)} <span style="color:var(--text-dim);font-weight:400">${isExpanded ? '&#9650;' : '&#9660;'}</span></div>
         <div class="card-sub">${volume} lifted</div>
         ${isExpanded ? `<div style="margin-top:10px">${doneSets}</div><div style="margin-top:12px"><button class="btn ghost" data-start-day="${dayIndex}">Redo This Day</button></div>` : ''}
@@ -148,10 +151,7 @@ export async function render(root, params, nav) {
         <button class="btn ${isActive ? 'ghost' : 'primary'}" id="setActiveBtn">${isActive ? 'Restart Program' : 'Set as Active Program'}</button>
       </div>
 
-      <div class="field">
-        <label for="weekSelect">Week</label>
-        <select id="weekSelect">${weekOptionsHtml()}</select>
-      </div>
+      <div class="week-pills" id="weekPills">${weekPillsHtml()}</div>
 
       <div id="dayList">${daysHtml()}</div>
     `;
@@ -167,14 +167,22 @@ export async function render(root, params, nav) {
       render(root, params, nav);
     });
 
-    root.querySelector('#weekSelect').addEventListener('change', async (e) => {
-      selectedWeek = Number(e.target.value);
-      await preloadLastSets(selectedWeek);
-      root.querySelector('#dayList').innerHTML = daysHtml();
-      wireDayButtons();
-    });
-
+    wireWeekPills();
     wireDayButtons();
+  }
+
+  function wireWeekPills() {
+    root.querySelectorAll('.week-pill').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        selectedWeek = Number(btn.dataset.week);
+        await preloadLastSets(selectedWeek);
+        root.querySelector('#weekPills').innerHTML = weekPillsHtml();
+        root.querySelector('#dayList').innerHTML = daysHtml();
+        wireWeekPills();
+        wireDayButtons();
+        root.querySelector(`.week-pill[data-week="${selectedWeek}"]`)?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+      });
+    });
   }
 
   function wireDayButtons() {

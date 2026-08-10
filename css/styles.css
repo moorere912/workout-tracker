@@ -144,6 +144,21 @@ h1, h2, h3, p { margin: 0 0 8px; letter-spacing: -0.01em; }
   background: currentColor;
   flex-shrink: 0;
 }
+.badge.success { background: var(--success-dim); color: var(--success); }
+
+.program-card { display: flex; align-items: flex-start; gap: 12px; }
+.program-card-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--accent-2);
+}
+.program-card-body { flex: 1; min-width: 0; }
 
 .btn {
   display: inline-flex;
@@ -364,8 +379,16 @@ h1, h2, h3, p { margin: 0 0 8px; letter-spacing: -0.01em; }
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
-.set-check.done { background: var(--success); color: #06231a; border-color: var(--success); transform: scale(1.04); }
+.set-check.done { background: var(--success); color: #06231a; border-color: var(--success); animation: check-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 .set-check:active { transform: scale(0.92); }
+@keyframes check-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .set-check.done { animation: none; }
+}
 
 .daily-total {
   position: sticky;
@@ -391,7 +414,22 @@ h1, h2, h3, p { margin: 0 0 8px; letter-spacing: -0.01em; }
 }
 .empty-state p { margin: 0; }
 
-svg.chart { width: 100%; height: auto; display: block; }
+svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+svg.chart .chart-area { animation: chart-fade 0.5s ease 0.15s both; }
+svg.chart .chart-line {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: chart-draw 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+svg.chart circle {
+  opacity: 0;
+  animation: chart-fade 0.3s ease 0.5s both;
+}
+@keyframes chart-draw { to { stroke-dashoffset: 0; } }
+@keyframes chart-fade { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  svg.chart .chart-line, svg.chart .chart-area, svg.chart circle { animation: none; opacity: 1; stroke-dashoffset: 0; }
+}
 
 .week-block { margin-bottom: 18px; }
 .week-block h3 { font-size: 15px; color: var(--text-dim); margin-bottom: 8px; }
@@ -507,3 +545,46 @@ svg.chart { width: 100%; height: auto; display: block; }
 .rest-timer-bar strong { font-size: 20px; font-variant-numeric: tabular-nums; }
 .rest-timer-bar.done strong { color: var(--success); }
 .rest-timer-bar #restSkipBtn { width: auto; padding: 8px 16px; }
+
+.week-pills {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 2px 2px 14px;
+  margin-bottom: 4px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.week-pills::-webkit-scrollbar { display: none; }
+.week-pill {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+.week-pill:active { transform: scale(0.95); }
+.week-pill.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(255, 90, 60, 0.28);
+}
+.week-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
+.week-pill.active .week-pill-dot { background: #fff; }
