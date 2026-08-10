@@ -484,9 +484,10 @@ svg.chart { width: 100%; height: auto; display: block; }
   position: fixed;
   left: 12px;
   right: 12px;
-  /* Sits above where the continue-bar would show, in case a rest timer is
-     still running after navigating off the workout screen. */
-  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 80px);
+  /* Only ever shown while the workout screen is active (app.js stops the
+     timer on navigating away), so it's safe to share the continue-bar's
+     spot -- the two never appear at the same time. */
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 10px);
   background: var(--surface);
   border: 1px solid var(--accent);
   color: var(--text);

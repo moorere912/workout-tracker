@@ -1,5 +1,5 @@
 import * as store from './store.js';
-import { initRestTimerBar } from './rest-timer.js';
+import { initRestTimerBar, stopRestTimer } from './rest-timer.js';
 import { icons } from './icons.js';
 import * as programsScreen from './screens/programs.js';
 import * as programDetailScreen from './screens/programDetail.js';
@@ -28,6 +28,8 @@ const tabForScreen = {
 
 const nav = {
   show(screenName, params = {}) {
+    if (screenName !== 'workout') stopRestTimer();
+
     document.querySelectorAll('.screen').forEach((el) => el.classList.remove('active'));
     const el = document.getElementById(`screen-${screenName}`);
     el.classList.add('active');
