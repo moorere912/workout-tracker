@@ -155,6 +155,23 @@ export async function deleteSession(sessionId) {
 
 /* Last performance / progress -------------------------------------------- */
 
+// Looks at the most recent prior session that included this exercise at all
+// (whether it was logged or skipped) -- used to show "you skipped this last
+// time" instead of stale/blank weight info.
+export async function getLastExerciseOutcome(exerciseId, beforeDate) {
+  const sessions = await getSessions();
+  for (const s of sessions) {
+    if (s.status !== 'completed') continue;
+    if (beforeDate && !(s.date < beforeDate)) continue;
+    const block = s.exercises.find((b) => b.exerciseId === exerciseId);
+    if (!block) continue;
+    if (block.skipped) return { type: 'skipped', date: s.date };
+    const doneSets = block.sets.filter((set) => set.completed);
+    if (doneSets.length > 0) return { type: 'logged', date: s.date, sets: doneSets };
+  }
+  return null;
+}
+
 export async function getLastCompletedSetsForExercise(exerciseId, beforeDate) {
   const rows = await db.getAllByIndex('setEntries', 'byExercise', exerciseId);
   const filtered = beforeDate ? rows.filter((r) => r.date < beforeDate) : rows;

@@ -97,6 +97,8 @@ function registerServiceWorker() {
         }
       });
     });
+  }).catch((err) => {
+    console.warn('Service worker registration failed:', err);
   });
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {

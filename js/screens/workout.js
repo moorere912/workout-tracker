@@ -1,5 +1,5 @@
 import * as store from '../store.js';
-import { openExercisePhotoModal } from '../exercise-photos.js';
+import { openExercisePhotoModal, openAlternativesModal } from '../exercise-photos.js';
 import { startRestTimer, stopRestTimer } from '../rest-timer.js';
 import { icons } from '../icons.js';
 
@@ -25,9 +25,9 @@ export async function render(root, params, nav) {
   }
 
   const exerciseCatalog = Object.fromEntries((await store.getExercises()).map((e) => [e.id, e]));
-  const lastTimeMap = {};
+  const outcomeMap = {};
   for (const block of session.exercises) {
-    lastTimeMap[block.exerciseId] = await store.getLastCompletedSetsForExercise(block.exerciseId, session.date);
+    outcomeMap[block.exerciseId] = await store.getLastExerciseOutcome(block.exerciseId, session.date);
   }
   const unit = await store.getUnit();
 
@@ -57,29 +57,54 @@ export async function render(root, params, nav) {
     `;
   }
 
+  function lastTimeHtml(block) {
+    const outcome = outcomeMap[block.exerciseId];
+    if (!outcome) return `<div class="last-time">Last time: no previous data</div>`;
+    if (outcome.type === 'skipped') return `<div class="last-time skipped-note">You skipped this last time</div>`;
+    const label = outcome.sets.map((s) => `${s.weight}x${s.reps}`).join(', ');
+    return `<div class="last-time">Last time: ${escapeHtml(label)}</div>`;
+  }
+
   function exerciseBlockHtml(block) {
     const ex = exerciseCatalog[block.exerciseId];
-    const lastSets = lastTimeMap[block.exerciseId];
-    const lastLabel = lastSets && lastSets.length
-      ? lastSets.map((s) => `${s.weight}x${s.reps}`).join(', ')
-      : 'no previous data';
     return `
       <div class="workout-exercise" data-block="${block.exerciseId}">
-        <h3><button type="button" class="exercise-link" data-photo-exercise="${block.exerciseId}">${escapeHtml(ex ? ex.name : block.exerciseId)}</button></h3>
+        <div class="workout-exercise-head">
+          <h3><button type="button" class="exercise-link" data-photo-exercise="${block.exerciseId}">${escapeHtml(ex ? ex.name : block.exerciseId)}</button></h3>
+          <button type="button" class="skip-link" data-skip-exercise="${block.exerciseId}">Skip</button>
+        </div>
         <div class="target">${repsLabel(block.target)}</div>
-        <div class="last-time">Last time: ${escapeHtml(lastLabel)}</div>
+        ${lastTimeHtml(block)}
         ${block.target.notes ? `<div class="last-time">${escapeHtml(block.target.notes)}</div>` : ''}
         <div class="sets">${block.sets.map((_, i) => setRowHtml(block, i)).join('')}</div>
       </div>
     `;
   }
 
+  function skippedSectionHtml() {
+    const skipped = session.exercises.filter((b) => b.skipped);
+    if (skipped.length === 0) return '';
+    return `
+      <div class="card">
+        <div class="card-title" style="font-size:14px;color:var(--text-dim)">Skipped this workout</div>
+        ${skipped
+          .map((b) => {
+            const ex = exerciseCatalog[b.exerciseId];
+            return `<div class="exercise-row"><span class="name">${escapeHtml(ex ? ex.name : b.exerciseId)}</span><button type="button" class="btn ghost" style="width:auto;padding:6px 12px" data-unskip="${b.exerciseId}">Undo</button></div>`;
+          })
+          .join('')}
+      </div>
+    `;
+  }
+
   function paint() {
     const total = store.sessionTotalVolume(session);
+    const activeBlocks = session.exercises.filter((b) => !b.skipped);
     root.innerHTML = `
       <div class="daily-total">Today's total: <strong id="dailyTotalVal">${fmtVolume(total, unit)}</strong></div>
       <h1>${escapeHtml(session.dayName || 'Workout')}</h1>
-      <div id="exerciseList">${session.exercises.map(exerciseBlockHtml).join('')}</div>
+      <div id="exerciseList">${activeBlocks.map(exerciseBlockHtml).join('')}</div>
+      <div id="skippedSection">${skippedSectionHtml()}</div>
       <button class="btn success" id="finishBtn" style="margin: 8px 0">Finish Workout</button>
       <button class="btn ghost" id="cancelBtn" style="margin: 0 0 24px">Cancel This Workout</button>
     `;
@@ -92,6 +117,38 @@ export async function render(root, params, nav) {
         const exerciseId = btn.dataset.photoExercise;
         const ex = exerciseCatalog[exerciseId];
         openExercisePhotoModal(exerciseId, ex ? ex.name : exerciseId);
+      });
+    });
+
+    root.querySelectorAll('[data-skip-exercise]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const exerciseId = btn.dataset.skipExercise;
+        const block = session.exercises.find((b) => b.exerciseId === exerciseId);
+        block.skipped = true;
+        await store.saveSession(session);
+        paint();
+
+        const ex = exerciseCatalog[exerciseId];
+        if (ex && ex.muscleGroup) {
+          const wantsAlternatives = window.confirm(`Skipped "${ex.name}". Want to see other exercises that work ${ex.muscleGroup}?`);
+          if (wantsAlternatives) {
+            const all = await store.getExercises();
+            const alternatives = all
+              .filter((e) => e.muscleGroup === ex.muscleGroup && e.id !== ex.id)
+              .sort((a, b) => a.name.localeCompare(b.name));
+            openAlternativesModal(ex.muscleGroup, alternatives);
+          }
+        }
+      });
+    });
+
+    root.querySelectorAll('[data-unskip]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const exerciseId = btn.dataset.unskip;
+        const block = session.exercises.find((b) => b.exerciseId === exerciseId);
+        block.skipped = false;
+        await store.saveSession(session);
+        paint();
       });
     });
 
